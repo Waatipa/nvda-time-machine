@@ -1,0 +1,34 @@
+import { queryOptions } from "@tanstack/react-query";
+import { getMarketHistory } from "./nvda.functions";
+
+export const COMPANIES = [
+  { symbol: "NVDA", name: "NVIDIA" },
+  { symbol: "AAPL", name: "Apple" },
+  { symbol: "MSFT", name: "Microsoft" },
+  { symbol: "AMZN", name: "Amazon" },
+  { symbol: "GOOGL", name: "Alphabet" },
+  { symbol: "META", name: "Meta" },
+  { symbol: "TSLA", name: "Tesla" },
+] as const;
+export type Symbol = typeof COMPANIES[number]["symbol"];
+export const TIMELINES = [
+  { key: "1d", label: "1 day" }, { key: "5d", label: "5 days" },
+  { key: "1mo", label: "1 month" }, { key: "6mo", label: "6 months" },
+  { key: "1y", label: "1 year" }, { key: "5y", label: "5 years" },
+] as const;
+export type Timeline = typeof TIMELINES[number]["key"];
+export const marketQuery = (symbol: Symbol = "NVDA", range: Timeline = "5y") => queryOptions({
+  queryKey: ["market", symbol, range],
+  queryFn: () => getMarketHistory({ data: { symbol, range } }),
+  staleTime: 60_000,
+  refetchInterval: 60_000,
+});
+
+export const pageHead = (title: string, description: string) => ({ meta: [
+  { title: `${title} — Nvestico Academy` },
+  { name: "description", content: description },
+  { property: "og:title", content: `${title} — Nvestico Academy` },
+  { property: "og:description", content: description },
+  { property: "og:type", content: "website" },
+  { name: "twitter:card", content: "summary_large_image" },
+] });
