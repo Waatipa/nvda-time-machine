@@ -25,9 +25,9 @@ export const marketQuery = (symbol: Symbol = "NVDA", range: Timeline = "5y") => 
 });
 
 export const pageHead = (title: string, description: string) => ({ meta: [
-  { title: `${title} — Nvestico Academy` },
+  { title: `${title} — Investico Academy` },
   { name: "description", content: description },
-  { property: "og:title", content: `${title} — Nvestico Academy` },
+  { property: "og:title", content: `${title} — Investico Academy` },
   { property: "og:description", content: description },
   { property: "og:type", content: "website" },
   { name: "twitter:card", content: "summary_large_image" },
