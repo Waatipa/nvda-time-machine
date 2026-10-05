@@ -13,7 +13,7 @@ export function MarketCalculator() {
   const company = COMPANIES.find((c) => c.symbol === symbol);
   return <main className="mx-auto max-w-6xl px-6 py-8">
     <div className="text-xs font-medium uppercase tracking-wide text-primary-deep">Magnificent Seven · Investment Time Machine</div>
-    <h1 className="mt-2 font-display text-3xl font-semibold md:text-4xl">Nvestico Academy</h1>
+    <h1 className="mt-2 font-display text-3xl font-semibold md:text-4xl">Investico Academy</h1>
     <div className="mt-6 flex flex-wrap gap-2" aria-label="Companies">
       {COMPANIES.map((c) => <Button key={c.symbol} variant={symbol === c.symbol ? "default" : "outline"}
         aria-pressed={symbol === c.symbol} onClick={() => setSymbol(c.symbol)}>{c.name} <span className="text-xs opacity-70">{c.symbol}</span></Button>)}

@@ -5,9 +5,9 @@ import { ArrowUpRight } from "lucide-react";
 export function SiteHeader() {
   return <header className="border-b border-border bg-background">
     <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
-      <Link to="/" className="flex items-center gap-3" aria-label="Nvestico Academy home">
+      <Link to="/" className="flex items-center gap-3" aria-label="Investico Academy home">
         <span className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground"><ArrowUpRight /></span>
-        <span className="font-display text-lg font-semibold">www.nvestico.academy</span>
+        <span className="font-display text-lg font-semibold">Investico Academy</span>
       </Link>
       <nav aria-label="Main menu" className="flex flex-wrap gap-1">
         {([
