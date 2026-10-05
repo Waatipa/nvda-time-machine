@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, ReferenceLine, Tooltip } from "recharts";
 import { COMPANIES, TIMELINES, marketQuery, type Symbol, type Timeline } from "@/lib/markets";
@@ -18,33 +18,29 @@ export function MarketCalculator() {
       {COMPANIES.map((c) => <Button key={c.symbol} variant={symbol === c.symbol ? "default" : "outline"}
         aria-pressed={symbol === c.symbol} onClick={() => setSymbol(c.symbol)}>{c.name} <span className="text-xs opacity-70">{c.symbol}</span></Button>)}
     </div>
-    <section className="mt-6 grid gap-5 border-y border-border py-5 sm:grid-cols-2">
-      <label><span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{mode === "once" ? "Investment (USD)" : "Monthly investment (USD)"}</span>
-        <div className="mt-2 flex max-w-sm items-center rounded-md border border-input px-3 focus-within:ring-2 focus-within:ring-ring"><span>$</span>
-          <input aria-label="Investment amount" type="number" min="1" value={amount || ""} onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))} className="w-full bg-transparent px-2 py-2 text-lg font-semibold outline-none" />
-        </div>
-      </label>
-      <div><span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Strategy</span><div className="mt-2 flex gap-1">
-        {(["once", "monthly"] as const).map((m) => <Button key={m} variant={mode === m ? "secondary" : "ghost"} aria-pressed={mode === m} onClick={() => setMode(m)}>{m === "once" ? "One-time" : "Monthly"}</Button>)}
-      </div></div>
-    </section>
     <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
       <h2 className="font-display text-xl font-semibold">{company?.name} <span className="text-sm text-muted-foreground">{symbol}</span></h2>
       <div className="flex flex-wrap gap-1" aria-label="Chart timeline">{TIMELINES.map((t) => <Button key={t.key} size="sm" variant={range === t.key ? "default" : "ghost"} aria-pressed={range === t.key} onClick={() => setRange(t.key)}>{t.label}</Button>)}</div>
     </div>
     <Suspense fallback={<div className="grid h-[500px] place-items-center text-muted-foreground" role="status">Loading market prices…</div>}>
-      <MarketResults key={`${symbol}-${range}-${mode}`} symbol={symbol} range={range} amount={amount} mode={mode} />
+      <MarketResults key={`${symbol}-${range}-${mode}`} symbol={symbol} range={range} amount={amount} mode={mode} setAmount={setAmount} setMode={setMode} />
     </Suspense>
   </main>;
 }
 
-function MarketResults({ symbol, range, amount, mode }: { symbol: Symbol; range: Timeline; amount: number; mode: Mode }) {
+function MarketResults({ symbol, range, amount, mode, setAmount, setMode }: { symbol: Symbol; range: Timeline; amount: number; mode: Mode; setAmount: (n: number) => void; setMode: (m: Mode) => void }) {
   const { data, isFetching, isRefetchError } = useSuspenseQuery(marketQuery(symbol, range));
   const [cursor, setCursor] = useState<number | null>(null);
   const dragging = useRef(false);
   const rows = useMemo(() => simulate(data.points, 0, amount, mode), [data.points, amount, mode]);
   const index = cursor == null ? rows.length - 1 : Math.min(cursor, rows.length - 1);
   const sel = rows[index];
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-i="${index}"]`);
+    const box = listRef.current;
+    if (el && box) box.scrollTo({ top: el.offsetTop - box.clientHeight / 2 + el.clientHeight / 2, behavior: "smooth" });
+  }, [index, rows.length]);
   const first = rows[0];
   const last = rows[rows.length - 1];
   if (!sel || !first || !last) return <p role="status">No prices available for this period.</p>;
@@ -52,12 +48,36 @@ function MarketResults({ symbol, range, amount, mode }: { symbol: Symbol; range:
   const roi = sel.invested ? profit / sel.invested * 100 : 0;
   const intraday = range === "1d" || range === "5d";
   const dateLabel = (t: number) => intraday ? new Date(t).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : fmtDate(t);
+  const calLabel = (t: number) => new Date(t).toLocaleString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric", ...(intraday ? { hour: "2-digit" as const, minute: "2-digit" as const } : {}), timeZone: "America/New_York" }) + (intraday ? " ET" : "");
   const move = (s: { activeTooltipIndex?: string | number }, force = false) => {
     if (!(dragging.current || force) || s?.activeTooltipIndex == null) return;
     const i = Number(s.activeTooltipIndex);
     if (Number.isFinite(i)) setCursor(i);
   };
+  const sharesBought = amount / first.price;
   return <>
+    <section className="mt-4 grid gap-5 border-y border-border py-5 md:grid-cols-[1fr_1fr_1.3fr]">
+      <label><span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{mode === "once" ? "Investment (USD)" : "Monthly investment (USD)"}</span>
+        <div className="mt-2 flex items-center rounded-md border border-input px-3 focus-within:ring-2 focus-within:ring-ring"><span>$</span>
+          <input aria-label="Investment amount" type="number" min="0" step="any" value={amount ? Number(amount.toFixed(2)) : ""} onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))} className="w-full bg-transparent px-2 py-2 text-lg font-semibold outline-none" />
+        </div>
+        <div className="mt-3 flex gap-1">{(["once", "monthly"] as const).map((m) => <Button key={m} size="sm" variant={mode === m ? "secondary" : "ghost"} aria-pressed={mode === m} onClick={() => setMode(m)}>{m === "once" ? "One-time" : "Monthly"}</Button>)}</div>
+      </label>
+      <label><span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{mode === "once" ? "Number of shares invested" : "Shares bought per month"}</span>
+        <div className="mt-2 flex items-center rounded-md border border-input px-3 focus-within:ring-2 focus-within:ring-ring">
+          <input aria-label="Number of shares invested" type="number" min="0" step="any" value={sharesBought ? Number(sharesBought.toFixed(4)) : ""} onChange={(e) => setAmount(Math.max(0, Number(e.target.value)) * first.price)} className="w-full bg-transparent py-2 text-lg font-semibold outline-none" />
+          <span className="text-xs text-muted-foreground">{symbol}</span>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">At {usd(first.price)} on {dateLabel(first.t)} · Holding {sel.shares.toLocaleString("en-US", { maximumFractionDigits: 4 })} shares at selected date</p>
+      </label>
+      <div><span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Calendar · {intraday || range === "1mo" ? "auto-set to market close" : "select a date"}</span>
+        <div ref={listRef} role="listbox" aria-label="Investment calendar" className="mt-2 h-40 overflow-y-auto rounded-md border border-input">
+          {rows.map((r, i) => <button key={r.t} type="button" role="option" aria-selected={i === index} data-i={i} onClick={() => setCursor(i)}
+            className={`flex w-full justify-between px-3 py-1.5 text-left text-sm tabular-nums ${i === index ? "bg-primary font-semibold text-primary-foreground" : "hover:bg-accent"}`}>
+            <span>{calLabel(r.t)}</span><span>{usd(r.price)}</span></button>)}
+        </div>
+      </div>
+    </section>
     <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2 text-sm">
       <span>Latest market price <strong className="font-display text-2xl tabular-nums">{usd(data.livePrice)}</strong></span>
       <span className="text-xs text-muted-foreground">Quote as of {dateLabel(data.liveTime)}{isFetching ? " · Refreshing…" : ""}{isRefetchError ? " · Refresh unavailable" : ""}</span>
@@ -76,10 +96,10 @@ function MarketResults({ symbol, range, amount, mode }: { symbol: Symbol; range:
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis dataKey="t" type="number" domain={["dataMin", "dataMax"]} scale="time" minTickGap={35} stroke="var(--muted-foreground)" fontSize={11} tickFormatter={(t: number) => new Date(t).toLocaleDateString("en-US", { ...(range === "5y" ? { year: "numeric" as const } : { month: "short" as const, day: "numeric" as const }), timeZone: "America/New_York" })} />
           <YAxis width={65} stroke="var(--muted-foreground)" fontSize={11} tickFormatter={(v: number) => v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}k` : `$${v.toFixed(0)}`} />
-          <Tooltip content={() => null} cursor={{ stroke: "var(--muted-foreground)", strokeDasharray: "3 3" }} />
+          <Tooltip content={({ active, payload }) => { const r = active && payload?.[0]?.payload as typeof sel | undefined; return r ? <div className="rounded-md border border-border bg-background px-3 py-2 shadow-soft"><div className="text-sm font-bold">{calLabel(r.t)}</div><div className="font-display text-2xl font-bold tabular-nums text-primary-deep">{usd(r.price)}</div><div className="text-xs text-muted-foreground">Value {usd(r.value)}</div></div> : null; }} cursor={{ stroke: "var(--muted-foreground)", strokeDasharray: "3 3" }} />
           <Area dataKey="value" stroke="var(--primary-deep)" strokeWidth={2} fill="url(#portfolioFill)" isAnimationActive={false} />
           <Line dataKey="invested" dot={false} stroke="var(--muted-foreground)" strokeDasharray="4 4" isAnimationActive={false} />
-          <ReferenceLine x={sel.t} stroke="var(--primary-deep)" strokeWidth={2} />
+          <ReferenceLine x={sel.t} stroke="var(--primary-deep)" strokeWidth={2} label={{ value: `${dateLabel(sel.t)} · ${usd(sel.price)}`, position: "insideTopLeft", fill: "var(--foreground)", fontSize: 15, fontWeight: 700 }} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
