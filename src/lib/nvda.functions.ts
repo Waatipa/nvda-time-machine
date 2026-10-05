@@ -24,7 +24,7 @@ export const getNvdaHistory = createServerFn({ method: "GET" }).handler(async ()
     const p = adj[i];
     const c = close[i];
     if (p == null || c == null || !isFinite(p)) continue;
-    points.push({ t: ts[i] * 1000, p, c });
+    points.push({ t: ts[i]! * 1000, p, c });
   }
   return {
     points,
