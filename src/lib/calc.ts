@@ -10,7 +10,9 @@ export function simulate(points: Pt[], startIdx: number, amount: number, mode: M
   let invested = 0;
   let lastMonth = -1;
   for (let i = startIdx; i < points.length; i++) {
-    const { t, p } = points[i]!;
+    const point = points[i];
+    if (!point) continue;
+    const { t, p } = point;
     const d = new Date(t);
     const mk = d.getUTCFullYear() * 12 + d.getUTCMonth();
     if (i === startIdx) {
