@@ -54,7 +54,7 @@ function Index() {
   const sel = series[ci];
   const profit = sel ? sel.value - sel.invested : 0;
   const roi = sel && sel.invested ? (profit / sel.invested) * 100 : 0;
-  const years = sel ? (sel.t - rows[0].t) / (365.25 * 86400000) : 0;
+  const years = sel ? (sel.t - rows[0]!.t) / (365.25 * 86400000) : 0;
   const cagr = mode === "once" && years > 0.1 && sel ? (Math.pow(sel.value / sel.invested, 1 / years) - 1) * 100 : null;
   const up = profit >= 0;
 
@@ -63,7 +63,7 @@ function Index() {
     const i = pts.findIndex((p) => p.t >= target);
     setStartIdx(Math.max(0, i)); setCursor(null);
   };
-  const isoStart = new Date(pts[startIdx].t).toISOString().slice(0, 10);
+  const isoStart = new Date(pts[startIdx]!.t).toISOString().slice(0, 10);
   const onDate = (v: string) => {
     const t = Date.parse(v + "T00:00:00Z");
     if (isNaN(t)) return;
@@ -128,8 +128,8 @@ function Index() {
           </div>
           <label className="block">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Start date</span>
-            <input type="date" value={isoStart} min={new Date(pts[0].t).toISOString().slice(0, 10)}
-              max={new Date(pts[pts.length - 1].t).toISOString().slice(0, 10)}
+            <input type="date" value={isoStart} min={new Date(pts[0]!.t).toISOString().slice(0, 10)}
+              max={new Date(pts[pts.length - 1]!.t).toISOString().slice(0, 10)}
               onChange={(e) => onDate(e.target.value)}
               className="mt-2 w-full rounded-lg border border-input px-3 py-2.5 outline-none focus:ring-2 focus:ring-ring" />
           </label>
@@ -203,12 +203,12 @@ function Index() {
             onChange={(e) => setCursor(Number(e.target.value))}
             className="mt-4 w-full accent-[var(--primary-deep)]" aria-label="Historical date cursor" />
           <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-            <span>{fmtDate(series[0].t)}</span>
+            <span>{fmtDate(series[0]!.t)}</span>
             <span className="flex items-center gap-4">
               <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 bg-primary-deep" />Portfolio value</span>
               <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 border-t border-dashed border-muted-foreground" />Amount invested</span>
             </span>
-            <span>{fmtDate(series[series.length - 1].t)}</span>
+            <span>{fmtDate(series[series.length - 1]!.t)}</span>
           </div>
         </section>
 

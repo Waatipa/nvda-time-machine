@@ -10,7 +10,7 @@ export function simulate(points: Pt[], startIdx: number, amount: number, mode: M
   let invested = 0;
   let lastMonth = -1;
   for (let i = startIdx; i < points.length; i++) {
-    const { t, p } = points[i];
+    const { t, p } = points[i]!;
     const d = new Date(t);
     const mk = d.getUTCFullYear() * 12 + d.getUTCMonth();
     if (i === startIdx) {
@@ -41,9 +41,9 @@ export function resample(rows: Row[], f: Frame): Row[] {
   if (f === "D") return rows;
   const out: Row[] = [];
   for (let i = 0; i < rows.length; i++) {
-    if (i === rows.length - 1 || key(rows[i + 1].t, f) !== key(rows[i].t, f)) out.push(rows[i]);
+    if (i === rows.length - 1 || key(rows[i + 1]!.t, f) !== key(rows[i]!.t, f)) out.push(rows[i]!);
   }
-  if (rows.length && out[0] !== rows[0]) out.unshift(rows[0]);
+  if (rows.length && out[0] !== rows[0]) out.unshift(rows[0]!);
   return out;
 }
 
