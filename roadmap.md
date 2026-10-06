@@ -1,4 +1,6 @@
 # Website update
+- [ ] Update tagline, genuine live company quotes, opening/current prices, price chart endpoint, and calendar scrolling.
+- [ ] Verify linked controls and refreshed quote presentation.
 - [x] Update website name and shared menu.
 - [x] Add all seven stocks with genuine prices and six chart timelines.
 - [x] Add About Us, Markets, Subscribe, Contact Us pages (subscription service and contact details not supplied).
