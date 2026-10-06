@@ -43,6 +43,8 @@ function CompanyButtons({ symbol, setSymbol, quotes }: { symbol: Symbol; setSymb
 
 function MarketResults({ symbol, range, amount, mode, setAmount, setMode }: { symbol: Symbol; range: Timeline; amount: number; mode: Mode; setAmount: (n: number) => void; setMode: (m: Mode) => void }) {
   const { data, isFetching, isRefetchError } = useSuspenseQuery(marketQuery(symbol, range));
+  const { data: quotes } = useSuspenseQuery(quotesQuery());
+  const currentQuote = quotes.find((q) => q.symbol === symbol);
   const [cursor, setCursor] = useState<number | null>(null);
   const dragging = useRef(false);
   const rows = useMemo(() => simulate(data.points, 0, amount, mode), [data.points, amount, mode]);
@@ -96,7 +98,7 @@ function MarketResults({ symbol, range, amount, mode, setAmount, setMode }: { sy
       </div>
     </section>
     <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2 text-sm">
-      <div><span className="text-xs text-muted-foreground">Opening and current price</span><div className="mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="text-muted-foreground">Opening <strong className="font-display text-lg text-foreground tabular-nums">{quotesOpening(data)}</strong></span><span>Current <strong key={data.livePrice} className="quote-tick font-display text-2xl tabular-nums">{usd(data.livePrice)}</strong></span></div></div>
+      <div><span className="text-xs text-muted-foreground">Opening and current price</span><div className="mt-1 flex flex-wrap items-baseline gap-x-5 gap-y-1"><span className="text-muted-foreground">Opening <strong className="font-display text-lg text-foreground tabular-nums">{currentQuote?.opening != null ? usd(currentQuote.opening) : "Unavailable"}</strong></span><span>Current <strong key={data.livePrice} className="quote-tick font-display text-2xl tabular-nums">{usd(data.livePrice)}</strong></span></div></div>
       <span className="text-xs text-muted-foreground">Quote as of {dateLabel(data.liveTime)}{isFetching ? " · Refreshing…" : ""}{isRefetchError ? " · Refresh unavailable" : ""}</span>
     </div>
     <section className="mt-5 grid grid-cols-2 gap-4 border-y border-border py-5 lg:grid-cols-4" aria-label="Investment results">
@@ -105,7 +107,7 @@ function MarketResults({ symbol, range, amount, mode, setAmount, setMode }: { sy
       <Stat label="Profit / Loss" value={`${profit >= 0 ? "+" : ""}${usd(profit)}`} positive={profit >= 0} />
       <Stat label="ROI / Total return" value={`${roi >= 0 ? "+" : ""}${roi.toLocaleString("en-US", { maximumFractionDigits: 2 })}%`} positive={profit >= 0} />
     </section>
-    <div className="mt-5 text-xs text-muted-foreground">{intraday ? "Market price" : "Adjusted close"} · {dateLabel(sel.t)} · <strong className="text-foreground">{usd(sel.price)}</strong></div>
+    <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1"><span className="font-display text-base font-semibold">{dateLabel(sel.t)}</span><strong className="font-display text-xl text-primary-deep tabular-nums">{usd(chartRows[index]?.chartPrice ?? sel.price)}</strong><span className="text-xs text-muted-foreground">Stock price</span></div>
     <div className="mt-3 h-[360px] select-none" onMouseUp={() => dragging.current = false} onMouseLeave={() => dragging.current = false}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={chartRows} margin={{ top: 35, right: 15, left: 8, bottom: 0 }} onMouseDown={(s) => { dragging.current = true; move(s, true); }} onMouseMove={(s) => move(s)} onClick={(s) => move(s, true)}>
@@ -113,7 +115,7 @@ function MarketResults({ symbol, range, amount, mode, setAmount, setMode }: { sy
           <CartesianGrid vertical={false} stroke="var(--border)" />
           <XAxis dataKey="t" type="number" domain={[first.t, chartEnd]} scale="time" minTickGap={55} stroke="var(--muted-foreground)" fontSize={11} tickFormatter={(t: number) => range === "1d" ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) : new Date(t).toLocaleDateString("en-US", { ...(range === "5y" ? { year: "numeric" as const } : { month: "short" as const, day: "numeric" as const }), timeZone: "America/New_York" })} />
           <YAxis orientation="right" width={65} domain={["auto", "auto"]} stroke="var(--muted-foreground)" fontSize={11} tickFormatter={(v: number) => usd(v)} />
-          <Tooltip content={({ active, payload }) => { const r = active && payload?.[0]?.payload as typeof sel | undefined; return r ? <div className="rounded-md border border-border bg-background px-3 py-2 shadow-soft"><div className="text-sm font-bold">{calLabel(r.t)}</div><div className="font-display text-2xl font-bold tabular-nums text-primary-deep">{usd(r.price)}</div><div className="text-xs text-muted-foreground">Value {usd(r.value)}</div></div> : null; }} cursor={{ stroke: "var(--muted-foreground)", strokeDasharray: "3 3" }} />
+          <Tooltip content={({ active, payload }) => { const r = active && payload?.[0]?.payload as typeof chartRows[number] | undefined; return r ? <div className="rounded-md border border-border bg-background px-3 py-2 shadow-soft"><div className="text-sm font-bold">{calLabel(r.t)}</div><div className="font-display text-2xl font-bold tabular-nums text-primary-deep">{usd(r.chartPrice)}</div><div className="text-xs text-muted-foreground">Value {usd(r.value)}</div></div> : null; }} cursor={{ stroke: "var(--muted-foreground)", strokeDasharray: "3 3" }} />
           <Area dataKey="chartPrice" stroke="var(--success)" strokeWidth={2} fill="url(#portfolioFill)" isAnimationActive={false} />
           {lastChart && <ReferenceLine y={lastChart.chartPrice} stroke="var(--success)" strokeDasharray="5 5" label={{ value: usd(lastChart.chartPrice), position: "insideTopRight", fill: "var(--success)", fontSize: 13, fontWeight: 700 }} />}
           {lastChart && <ReferenceDot x={last.t} y={lastChart.chartPrice} r={5} fill="var(--success)" stroke="var(--background)" strokeWidth={2} className={data.marketOpen ? "market-endpoint" : ""} />}
@@ -126,8 +128,6 @@ function MarketResults({ symbol, range, amount, mode, setAmount, setMode }: { sy
     <p className="mt-6 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">Source: Yahoo Finance · {symbol} · {data.points.length.toLocaleString()} price observations. Quotes are checked every 15 seconds and may be delayed; prices only change when the source updates. {intraday ? "Intraday chart uses actual traded prices during regular market hours; 1 day shows the latest trading session." : "The chart shows split-adjusted closing stock prices; investment results and calendar use closes adjusted for splits and dividends."} Investment begins at the first displayed price; monthly contributions follow on the first available trading day of each new month. Excludes taxes and fees. Not financial advice.</p>
   </>;
 }
-
-function quotesOpening(data: { openingPrice: number | null }) { return data.openingPrice != null ? usd(data.openingPrice) : "Unavailable"; }
 
 function Stat({ label, value, positive }: { label: string; value: string; positive?: boolean }) {
   return <div className="min-w-0"><div className="text-xs text-muted-foreground">{label}</div><div className={`mt-2 break-words font-display text-xl font-semibold tabular-nums ${positive == null ? "text-foreground" : positive ? "text-success" : "text-destructive"}`}>{value}</div></div>;

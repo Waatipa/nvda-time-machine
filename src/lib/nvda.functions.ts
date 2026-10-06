@@ -40,6 +40,12 @@ async function fetchHistory(data: { symbol: string; range: string }): Promise<Nv
     points.push({ t: t * 1000, p, c });
   }
   if (!points.length) throw new Error("Price history is currently unavailable. Please try again.");
+   const currentPrice = r.meta?.regularMarketPrice;
+   const currentTime = r.meta?.regularMarketTime;
+   const finalPoint = points[points.length - 1];
+   if (interval !== "1d" && finalPoint && typeof currentPrice === "number" && currentPrice > 0 && typeof currentTime === "number" && currentTime * 1000 > finalPoint.t) {
+     points.push({ t: currentTime * 1000, p: currentPrice, c: currentPrice });
+   }
    const regular = r.meta?.currentTradingPeriod?.regular;
    const openingIndex = ts.findIndex((t) => regular?.start != null && t >= regular.start);
    const opening = r.indicators?.quote?.[0]?.open?.[openingIndex >= 0 ? openingIndex : ts.length - 1];
