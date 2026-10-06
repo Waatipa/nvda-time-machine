@@ -6,6 +6,9 @@ export type NvdaData = {
   livePrice: number;
   liveTime: number;
   fetchedAt: number;
+  openingPrice: number | null;
+  previousClose: number | null;
+  marketOpen: boolean;
 };
 
 export const getMarketHistory = createServerFn({ method: "GET" })
@@ -13,7 +16,9 @@ export const getMarketHistory = createServerFn({ method: "GET" })
    symbol: z.enum(["NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA"]),
    range: z.enum(["1d", "5d", "1mo", "6mo", "1y", "5y"]),
  }).parse(input))
- .handler(async ({ data }): Promise<NvdaData> => {
+ .handler(async ({ data }): Promise<NvdaData> => fetchHistory(data));
+
+async function fetchHistory(data: { symbol: string; range: string }): Promise<NvdaData> {
    const interval = data.range === "1d" ? "5m" : data.range === "5d" ? "30m" : "1d";
   const res = await fetch(
     `https://query1.finance.yahoo.com/v8/finance/chart/${data.symbol}?range=${data.range}&interval=${interval}&includeAdjustedClose=true`,
@@ -35,10 +40,28 @@ export const getMarketHistory = createServerFn({ method: "GET" })
     points.push({ t: t * 1000, p, c });
   }
   if (!points.length) throw new Error("Price history is currently unavailable. Please try again.");
+   const regular = r.meta?.currentTradingPeriod?.regular;
+   const openingIndex = ts.findIndex((t) => regular?.start != null && t >= regular.start);
+   const opening = r.indicators?.quote?.[0]?.open?.[openingIndex >= 0 ? openingIndex : ts.length - 1];
   return {
     points,
     livePrice: r.meta?.regularMarketPrice ?? points[points.length - 1]?.c ?? 0,
     liveTime: (r.meta?.regularMarketTime ?? 0) * 1000,
     fetchedAt: Date.now(),
+     openingPrice: typeof opening === "number" && Number.isFinite(opening) ? opening : null,
+     previousClose: r.meta?.chartPreviousClose ?? r.meta?.previousClose ?? null,
+     marketOpen: regular?.start != null && Date.now() >= regular.start * 1000 && Date.now() < regular.end * 1000,
   };
+}
+
+export const getMarketQuotes = createServerFn({ method: "GET" }).handler(async () => {
+  const symbols = ["NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA"] as const;
+  return Promise.all(symbols.map(async (symbol) => {
+    try {
+      const data = await fetchHistory({ symbol, range: "1d" });
+      return { symbol, price: data.livePrice, time: data.liveTime, opening: data.openingPrice, previousClose: data.previousClose, marketOpen: data.marketOpen };
+    } catch {
+      return { symbol, price: null, time: null, opening: null, previousClose: null, marketOpen: false };
+    }
+  }));
 });
