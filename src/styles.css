@@ -154,3 +154,13 @@
 @utility shadow-soft {
   box-shadow: var(--shadow-soft);
 }
+
+.market-calendar { scrollbar-width: auto; scrollbar-color: var(--primary-deep) var(--muted); }
+.market-calendar::-webkit-scrollbar { width: 12px; }
+.market-calendar::-webkit-scrollbar-track { background: var(--muted); }
+.market-calendar::-webkit-scrollbar-thumb { background: var(--primary-deep); border: 3px solid var(--muted); border-radius: 6px; }
+@keyframes quote-update { from { background: var(--accent); } to { background: transparent; } }
+@keyframes endpoint-pulse { 50% { opacity: 0.45; } }
+.quote-tick { animation: quote-update 1.2s ease-out; }
+.market-endpoint { animation: endpoint-pulse 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .quote-tick, .market-endpoint { animation: none; } }
