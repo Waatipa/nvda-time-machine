@@ -20,15 +20,17 @@ export type Timeline = typeof TIMELINES[number]["key"];
 export const marketQuery = (symbol: Symbol = "NVDA", range: Timeline = "5y") => queryOptions({
   queryKey: ["market", symbol, range],
   queryFn: () => getMarketHistory({ data: { symbol, range } }),
-  staleTime: 60_000,
-   refetchInterval: 15_000,
+   staleTime: 0,
+   refetchOnMount: false,
+   refetchInterval: 5_000,
 });
 
 export const quotesQuery = () => queryOptions({
   queryKey: ["market-quotes"],
   queryFn: () => getMarketQuotes(),
-  staleTime: 10_000,
-  refetchInterval: 15_000,
+   staleTime: 0,
+   refetchOnMount: false,
+   refetchInterval: 5_000,
 });
 
 export const pageHead = (title: string, description: string) => ({ meta: [
