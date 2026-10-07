@@ -11,7 +11,7 @@ export function PriceChart({ points, previousClose, index, onSelect, candles, da
   if (previousClose != null) prices.push(previousClose);
   const low = Math.min(...prices), high = Math.max(...prices);
   const pad = Math.max((high - low) * .12, high * .002);
-  const min = low - pad, max = high + pad;
+  const min = Math.max(0, low - pad), max = high + pad;
   const x = (i: number) => left + i / Math.max(1, points.length - 1) * (right - left - 75);
   const y = (p: number) => bottom - (p - min) / (max - min) * (bottom - top);
   const baseline = previousClose == null ? bottom : y(previousClose);

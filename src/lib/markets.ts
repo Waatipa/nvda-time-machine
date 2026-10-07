@@ -21,6 +21,7 @@ export const marketQuery = (symbol: Symbol = "NVDA", range: Timeline = "5y") => 
   queryKey: ["market", symbol, range],
   queryFn: () => getMarketHistory({ data: { symbol, range } }),
    staleTime: 0,
+   refetchOnMount: false,
    refetchInterval: 5_000,
 });
 
@@ -28,6 +29,7 @@ export const quotesQuery = () => queryOptions({
   queryKey: ["market-quotes"],
   queryFn: () => getMarketQuotes(),
    staleTime: 0,
+   refetchOnMount: false,
    refetchInterval: 5_000,
 });
 
