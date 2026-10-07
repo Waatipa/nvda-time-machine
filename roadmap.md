@@ -1,5 +1,5 @@
 # Website update
-- [ ] Match reference calculator structure, add genuine candlesticks and below-close red shading, and refresh quotes every five seconds.
+- [x] Match reference calculator structure, add genuine candlesticks and below-close red shading, and refresh quotes every five seconds.
 - [x] Update tagline, genuine live company quotes, opening/current prices, price chart endpoint, and calendar scrolling.
 - [x] Verify linked controls and refreshed quote presentation.
 - [x] Update website name and shared menu.
