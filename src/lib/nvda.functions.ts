@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 export type NvdaData = {
-  points: { t: number; p: number; c: number }[]; // t=ms, p=adjusted close, c=raw close
+  points: { t: number; p: number; c: number; o: number | null; h: number | null; l: number | null }[];
   livePrice: number;
   liveTime: number;
   fetchedAt: number;
@@ -37,14 +37,16 @@ async function fetchHistory(data: { symbol: string; range: string }): Promise<Nv
     const c = close[i];
     const t = ts[i];
     if (t == null || p == null || c == null || !isFinite(p) || p <= 0) continue;
-    points.push({ t: t * 1000, p, c });
+    const quote = r.indicators?.quote?.[0];
+    const valid = (v: unknown): number | null => typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
+    points.push({ t: t * 1000, p, c, o: valid(quote?.open?.[i]), h: valid(quote?.high?.[i]), l: valid(quote?.low?.[i]) });
   }
   if (!points.length) throw new Error("Price history is currently unavailable. Please try again.");
    const currentPrice = r.meta?.regularMarketPrice;
    const currentTime = r.meta?.regularMarketTime;
    const finalPoint = points[points.length - 1];
    if (interval !== "1d" && finalPoint && typeof currentPrice === "number" && currentPrice > 0 && typeof currentTime === "number" && currentTime * 1000 > finalPoint.t) {
-     points.push({ t: currentTime * 1000, p: currentPrice, c: currentPrice });
+      points.push({ t: currentTime * 1000, p: currentPrice, c: currentPrice, o: null, h: null, l: null });
    }
    const regular = r.meta?.currentTradingPeriod?.regular;
    const openingIndex = ts.findIndex((t) => regular?.start != null && t >= regular.start);

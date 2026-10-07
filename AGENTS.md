@@ -14,3 +14,4 @@
 - Use a shared calculator on home and Markets, and reset the date cursor when company, timeline, or strategy changes, so selected results always match the displayed price series.
 - Fetch company quotes together through an allowlisted public market function and refresh without synthesizing ticks; chart stock prices separately from calculated portfolio results so axes remain truthful.
 - Transfer the request-scoped Query cache through router dehydration/hydration so live market prices match the server-rendered snapshot on first load.
+- Render candlesticks only from source OHLC observations; quote-only endpoints have no fabricated candle and below-close shading uses the latest session's previous close.
