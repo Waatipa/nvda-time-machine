@@ -1,4 +1,4 @@
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowUp, ArrowDown, Radio, Calculator, LoaderCircle } from "lucide-react";
 import { COMPANIES, quotesQuery, type Symbol } from "@/lib/markets";
@@ -17,7 +17,7 @@ export function MarketCalculator() {
     <h1 className="mt-2 max-w-3xl font-display text-3xl font-semibold leading-tight md:text-4xl">See What Your Money Would Have Become.</h1>
     <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">Pick a company, enter how much you would have invested, drag through time, and instantly see the profit, ROI, and portfolio value. Historical investment math made simple.</p>
     <Suspense fallback={<CompanyButtons symbol={symbol} setSymbol={setSymbol} />}><LiveCompanies symbol={symbol} setSymbol={setSymbol} /></Suspense>
-    <InvestmentForm key={symbol} symbol={symbol} />
+    <InvestmentForm symbol={symbol} />
   </main>;
 }
 
@@ -57,6 +57,7 @@ function InvestmentForm({ symbol }: { symbol: Symbol }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const company = COMPANIES.find(c => c.symbol === symbol);
+  useEffect(() => { setResult(null); setError(""); }, [symbol]);
   async function calculate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
