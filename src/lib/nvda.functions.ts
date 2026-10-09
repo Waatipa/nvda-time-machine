@@ -137,5 +137,5 @@ export const getPriceOnDate = createServerFn({ method: "GET" })
       const c = closes[i];
       return c != null && Number.isFinite(c) && c > 0 && tradingDate(t * 1000) >= data.date ? [c] : [];
     }).sort((a, b) => a - b);
-    return eligible.length ? eligible[0] : null;
+    return eligible.length ? eligible[0] ?? null : null;
   });
