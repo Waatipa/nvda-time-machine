@@ -13,3 +13,13 @@ export function calculateShares(points: InvestmentPoint[], startDate: string, en
   const profit = value - invested;
   return { shares, invested, value, profit, roi: profit / invested * 100, purchasePrice: first.c, endPrice: last.c, purchaseDate: tradingDate(first.t), valuationDate: tradingDate(last.t) };
 }
+
+export function latestSessionPrice(timestamps: number[], closes: (number | null)[], periods: { start: number; end: number }[]) {
+  let latest: { price: number; time: number } | null = null;
+  timestamps.forEach((t, i) => {
+    const price = closes[i];
+    if (price == null || !Number.isFinite(price) || price <= 0 || !periods.some(p => t >= p.start && t < p.end)) return;
+    if (!latest || t * 1000 > latest.time) latest = { price, time: t * 1000 };
+  });
+  return latest;
+}
