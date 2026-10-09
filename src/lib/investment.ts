@@ -16,10 +16,11 @@ export function calculateShares(points: InvestmentPoint[], startDate: string, en
 
 export function latestSessionPrice(timestamps: number[], closes: (number | null)[], periods: { start: number; end: number }[]) {
   let latest: { price: number; time: number } | null = null;
-  timestamps.forEach((t, i) => {
+  for (let i = 0; i < timestamps.length; i++) {
+    const t = timestamps[i];
     const price = closes[i];
-    if (price == null || !Number.isFinite(price) || price <= 0 || !periods.some(p => t >= p.start && t < p.end)) return;
+    if (t == null || price == null || !Number.isFinite(price) || price <= 0 || !periods.some(p => t >= p.start && t < p.end)) continue;
     if (!latest || t * 1000 > latest.time) latest = { price, time: t * 1000 };
-  });
+  }
   return latest;
 }

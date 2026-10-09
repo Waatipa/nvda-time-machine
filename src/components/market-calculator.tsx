@@ -38,8 +38,8 @@ function CompanyButtons({ symbol, setSymbol, quotes }: { symbol: Symbol; setSymb
       <div className="px-1 pt-2">
         <div key={quote?.price} className="quote-tick text-sm font-semibold tabular-nums" title={quote?.time ? sessionTime(quote.time) : undefined}>{quote?.price != null ? usd(quote.price) : quotes ? "Unavailable" : "—"}</div>
         <div className={`mt-1 flex min-h-4 items-center gap-0.5 text-[10px] tabular-nums ${change == null || change === 0 ? "text-muted-foreground" : change > 0 ? "text-success" : "text-destructive"}`}>{change != null && percent != null ? <>{change > 0 ? <ArrowUp className="h-3 w-3 shrink-0" /> : change < 0 ? <ArrowDown className="h-3 w-3 shrink-0" /> : null}{Math.abs(change).toFixed(2)} ({percent > 0 ? "+" : ""}{percent.toFixed(2)}%)</> : "—"}</div>
-        <SessionPrice label="Premarket" price={quote?.preMarketPrice} time={quote?.preMarketTime} />
-        <SessionPrice label="After-hours" price={quote?.postMarketPrice} time={quote?.postMarketTime} />
+        <SessionPrice label="Premarket" price={quote?.preMarketPrice ?? null} time={quote?.preMarketTime ?? null} />
+        <SessionPrice label="After-hours" price={quote?.postMarketPrice ?? null} time={quote?.postMarketTime ?? null} />
       </div>
     </div>;
   })}</div>;
