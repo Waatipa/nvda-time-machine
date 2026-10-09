@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowUp, ArrowDown, Radio, Calculator, LoaderCircle } from "lucide-react";
 import { COMPANIES, quotesQuery, type Symbol } from "@/lib/markets";
 import { usd } from "@/lib/calc";
-import { getInvestmentResult, type MarketQuote } from "@/lib/nvda.functions";
+import { getInvestmentResult, getPriceOnDate, type MarketQuote } from "@/lib/nvda.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -53,11 +53,36 @@ function InvestmentForm({ symbol }: { symbol: Symbol }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [shares, setShares] = useState("10");
+  const [amount, setAmount] = useState("");
+  const [purchasePrice, setPurchasePrice] = useState<number | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const company = COMPANIES.find(c => c.symbol === symbol);
-  useEffect(() => { setResult(null); setError(""); }, [symbol]);
+  useEffect(() => { setResult(null); setError(""); setPurchasePrice(null); setAmount(""); }, [symbol, startDate]);
+  useEffect(() => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return;
+    let cancelled = false;
+    getPriceOnDate({ data: { symbol, date: startDate } })
+      .then(price => {
+        if (cancelled) return;
+        setPurchasePrice(price);
+        const q = Number(shares);
+        if (price != null && Number.isFinite(q) && q > 0) setAmount((Math.round(q * price * 100) / 100).toString());
+      })
+      .catch(() => { if (!cancelled) setPurchasePrice(null); });
+    return () => { cancelled = true; };
+  }, [symbol, startDate]);
+  function updateShares(v: string) {
+    setShares(v); setResult(null);
+    const q = Number(v);
+    if (purchasePrice != null && Number.isFinite(q) && q > 0) setAmount((Math.round(q * purchasePrice * 100) / 100).toString());
+  }
+  function updateAmount(v: string) {
+    setAmount(v); setResult(null);
+    const a = Number(v);
+    if (purchasePrice != null && Number.isFinite(a) && a > 0) setShares((Math.round(a / purchasePrice * 1e6) / 1e6).toString());
+  }
   async function calculate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
@@ -68,7 +93,7 @@ function InvestmentForm({ symbol }: { symbol: Symbol }) {
   }
   return <section className="mt-7 border-t border-border pt-6" aria-label="Profit calculator">
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><h2 className="font-display text-xl font-semibold">Profit calculator</h2><span className="text-sm font-medium text-primary-deep">{company?.name} · {symbol}</span></div>
-    <form className="mt-5 grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]" onSubmit={calculate}>
+    <form className="mt-5 grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]" onSubmit={calculate}>
       <label className="grid gap-2 text-xs font-medium" htmlFor="investment-date">Investment date<Input id="investment-date" type="date" required value={startDate} disabled={busy} onChange={e => { setStartDate(e.target.value); setResult(null); }} className="h-11" /></label>
       <label className="grid gap-2 text-xs font-medium" htmlFor="valuation-date">Valuation date<Input id="valuation-date" type="date" required min={startDate || undefined} value={endDate} disabled={busy} onChange={e => { setEndDate(e.target.value); setResult(null); }} className="h-11" /></label>
       <label className="grid gap-2 text-xs font-medium" htmlFor="investment-shares">Number of shares<Input id="investment-shares" type="number" min="0.000001" step="any" required value={shares} disabled={busy} onChange={e => { setShares(e.target.value); setResult(null); }} className="h-11" /></label>
