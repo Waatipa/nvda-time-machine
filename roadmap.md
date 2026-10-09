@@ -1,4 +1,7 @@
 # Website update
+- [x] Replace all content below companies with a selected-company, dates and shares calculator with popup results.
+- [x] Add genuine timestamped premarket and after-hours prices with smaller price typography.
+- [x] Verify calculation, company switching, unavailable prices and page layout.
 - [x] Match reference calculator structure, add genuine candlesticks and below-close red shading, and refresh quotes every five seconds.
 - [x] Update tagline, genuine live company quotes, opening/current prices, price chart endpoint, and calendar scrolling.
 - [x] Verify linked controls and refreshed quote presentation.
