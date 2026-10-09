@@ -121,3 +121,21 @@ export const getInvestmentResult = createServerFn({ method: "GET" })
     });
     return calculateShares(points, data.startDate, data.endDate, data.shares);
   });
+
+export const getPriceOnDate = createServerFn({ method: "GET" })
+  .inputValidator(input => z.object({ symbol: z.enum(["NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA"]), date: dateInput }).parse(input))
+  .handler(async ({ data }): Promise<number | null> => {
+    const period1 = Math.floor(Date.parse(data.date + "T00:00:00Z") / 1000);
+    const period2 = period1 + 86400 * 10;
+    const response = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${data.symbol}?period1=${period1}&period2=${period2}&interval=1d`, { headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" }, signal: AbortSignal.timeout(15000) });
+    if (!response.ok) throw new Error("Historical prices are unavailable for this date. Please try another date.");
+    const json: any = await response.json();
+    const r = json?.chart?.result?.[0];
+    const timestamps: number[] = r?.timestamp ?? [];
+    const closes: (number | null)[] = r?.indicators?.quote?.[0]?.close ?? [];
+    const eligible = timestamps.flatMap((t, i) => {
+      const c = closes[i];
+      return c != null && Number.isFinite(c) && c > 0 && tradingDate(t * 1000) >= data.date ? [c] : [];
+    }).sort((a, b) => a - b);
+    return eligible.length ? eligible[0] : null;
+  });
